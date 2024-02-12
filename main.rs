@@ -1,4 +1,8 @@
 #![allow(unused)]
+
+mod player;
+mod town;
+
 use console::{Key, Term};
 use crossterm::{
     execute,
@@ -7,51 +11,7 @@ use crossterm::{
 use std::fs::File;
 use std::io::{self, Read};
 
-mod town;
-
-pub struct PlayerStatus {
-    status_points: i32,
-    strength: i32,
-    vitality: i32,
-    agility: i32,
-    intelligence: i32,
-    dexterity: i32,
-    luck: i32,
-    nickname: String,
-    money: i32,
-    level: i32,
-    current_hp: i32,
-    max_hp: i32,
-    current_sp: i32,
-    max_sp: i32,
-    job: String,
-    xp: i32,
-    required_xp: i32,
-}
-
-fn initialize_player_status() -> PlayerStatus {
-    let player_status = PlayerStatus {
-        status_points: 24,
-        strength: 0,
-        vitality: 0,
-        agility: 0,
-        intelligence: 0,
-        dexterity: 0,
-        luck: 0,
-        nickname: "".to_string(),
-        money: 250,
-        level: 1,
-        current_hp: 100,
-        max_hp: 100,
-        current_sp: 100,
-        max_sp: 100,
-        job: "Freelancer".to_string(),
-        xp: 0,
-        required_xp: 10,
-    };
-
-    player_status
-}
+use crate::player::*;
 
 fn main_menu_screen() {
     println!("\\============/");
@@ -134,8 +94,38 @@ fn account_creation_screen() -> PlayerStatus {
     player_status
 }
 
+fn render_map(
+    x: usize,
+    y: usize,
+    last_x: usize,
+    last_y: usize,
+    mut map: Vec<Vec<char>>,
+    mut player_status: PlayerStatus,
+) -> (PlayerStatus, Vec<Vec<char>>) {
+    if map[last_y][last_x] == 'O' {
+        map[last_y][last_x] = 'O';
+    } else {
+        map[last_y][last_x] = ' ';
+    }
+
+    if map[y][x] == 'O' {
+        player_status = town::town_portal(x, y, player_status);
+    } else {
+        map[y][x] = 'P';
+    }
+
+    for row in &map {
+        for &c in row {
+            print!("{}", c);
+        }
+        println!();
+    }
+
+    (player_status, map)
+}
+
 fn is_traversable(character: char) -> bool {
-    if character == ' ' {
+    if character == ' ' || character == 'O' {
         return true;
     }
     false
@@ -162,58 +152,40 @@ fn game(mut player_status: PlayerStatus) {
         }
     };
 
-    let (mut y, mut x) = (11, 16);
+    let (mut y, mut x, mut last_y, mut last_x) = (11, 16, 10, 15);
 
     let stdout = Term::buffered_stdout();
     loop {
         execute!(io::stdout(), terminal::Clear(ClearType::All),).expect("Failed to clear screen");
-        map[y][x] = 'P';
-        for row in &map {
-            for &c in row {
-                print!("{}", c);
-            }
-            println!();
-        }
+        (player_status, map) = render_map(x, y, last_x, last_y, map, player_status);
 
         if let Ok(character) = stdout.read_char() {
             match character {
                 'w' => {
                     if is_traversable(map[y - 1][x]) {
-                        if map[y][x] == 'O' {
-                            player_status = town::town_portal(x, y, player_status);
-                        } else {
-                            map[y][x] = ' ';
-                        }
+                        last_y = y;
+                        last_x = x;
                         y -= 1;
                     }
                 }
                 'a' => {
                     if is_traversable(map[y][x - 1]) {
-                        if map[y][x] == 'O' {
-                            player_status = town::town_portal(x, y, player_status);
-                        } else {
-                            map[y][x] = ' ';
-                        }
+                        last_y = y;
+                        last_x = x;
                         x -= 1;
                     }
                 }
                 's' => {
                     if is_traversable(map[y + 1][x]) {
-                        if map[y][x] == 'O' {
-                            player_status = town::town_portal(x, y, player_status);
-                        } else {
-                            map[y][x] = ' ';
-                        }
+                        last_y = y;
+                        last_x = x;
                         y += 1;
                     }
                 }
                 'd' => {
                     if is_traversable(map[y][x + 1]) {
-                        if map[y][x] == 'O' {
-                            player_status = town::town_portal(x, y, player_status);
-                        } else {
-                            map[y][x] = ' ';
-                        }
+                        last_y = y;
+                        last_x = x;
                         x += 1;
                     }
                 }
@@ -224,7 +196,8 @@ fn game(mut player_status: PlayerStatus) {
 }
 
 fn start_game() {
-    let player_status: PlayerStatus = account_creation_screen();
+    // let player_status: PlayerStatus = account_creation_screen();
+    let player_status: PlayerStatus = preset_player_status();
     game(player_status);
 }
 
