@@ -37,22 +37,70 @@ fn goods_store(mut player_status: PlayerStatus) -> PlayerStatus {
         .read_line(&mut choice)
         .expect("Failed to read line");
 
-    match choice.trim() {
-        "1" => println!("buy goodies"),    //future implementation
-        "2" => println!("sell yer items"), //future implementation
-        _ => {
-            println!("[Goods Dealer]");
-            println!("Thanks, come again!");
+    loop {
+        match choice.trim() {
+            "1" => {
+                println!("[Goods Dealer]");
+                println!("We have HP potion and SP potion stocked up");
+
+                println!("\n[{}]", player_status.nickname);
+                println!(
+                    "(You have {} zemy left). You choose to buy...",
+                    player_status.money
+                );
+                println!("\t1. HP Potion[25 Z]\t2. SP Potion[35 Z]\t3. Back");
+
+                loop {
+                    println!("Action: ");
+
+                    let mut choice: String = String::new();
+                    io::stdin()
+                        .read_line(&mut choice)
+                        .expect("Failed to read line");
+
+                    match choice.trim() {
+                        "1" => {
+                            println!("Input quantity [Min 1]: ");
+                            let mut qty: String = String::new();
+                            io::stdin()
+                                .read_line(&mut choice)
+                                .expect("Failed to read line");
+
+                            let qty: i32 = qty.parse::<i32>().unwrap();
+
+                            if qty * 25 > player_status.money {
+                                println!("You don't have enough money...");
+                            } else {
+                                player_status.money -= qty * 25;
+                            }
+                        }
+                        _ => break,
+                    }
+                }
+            }
+            "2" => println!("sell yer items"), //future implementation
+            _ => {
+                println!("[Goods Dealer]");
+                println!("Thanks, come again!");
+                break;
+            }
         }
     }
+
     player_status
 }
 
 fn gear_store(mut player_status: PlayerStatus) -> PlayerStatus {
     println!("[Gear Dealer]");
-    println!("Yo {}, interested on buying some gears?", player_status.nickname);
+    println!(
+        "Yo {}, interested on buying some gears?",
+        player_status.nickname
+    );
     println!("\n[{}]", player_status.nickname);
-    println!("(You have {} zemy left). You decide to...", player_status.nickname);
+    println!(
+        "(You have {} zemy left). You decide to...",
+        player_status.nickname
+    );
     println!("\t1. Buy\t2. Not buy");
     println!("Action: ");
 
